@@ -1,0 +1,188 @@
+﻿@model IEnumerable<Stat>
+
+@{
+    ViewData["Title"] = "Home page";
+}
+<div class="input-group">
+    <input class="form-control" type="text" id="address" placeholder="Type An Address">
+    <div class="input-group-btn">
+        <button type="button" onclick="GetStats()" class="btn btn-info" id="searchButton">
+            <span class="glyphicon glyphicon-search"></span> Search Address
+        </button>
+    </div>
+</div>
+
+<div id="results" hidden>
+    <div class="row">
+        <h1 class="text-primary text-center" id="score"></h1>
+    </div>
+    <div class="row">
+        <div class="col-sm-4">
+            <button type="button" class="btn btn-block btn-primary btn-sm" onclick="ShowAirQuality()">
+                Air Quality
+                <span class="badge" id="airQuality"></span>
+            </button>
+        </div>
+        <div class="col-sm-4">
+            <button type="button" class="btn btn-block btn-success btn-sm" onclick="ShowParkFeatures()">
+                Park Features
+                <span class="badge" id="parkFeatures"></span>
+            </button>
+        </div>
+        <div class="col-sm-4">
+            <button type="button" class="btn btn-block btn-danger btn-sm" onclick="ShowCrimes()">
+                Crimes
+                <span class="badge" id="crime"></span>
+            </button>
+        </div>
+        <div class="col-sm-4">
+            <button type="button" class="btn btn-block btn-warning btn-sm" onclick="ShowSchools()" >
+                Schools
+                <span class="badge" id="school"></span>
+            </button>
+        </div>
+        <div class="col-sm-4">
+            <button type="button" class="btn btn-block btn-info btn-sm" onclick="ShowLibraries()">
+                Libraries
+                <span class="badge" id="library"></span>
+            </button>
+        </div>
+    </div>
+
+    <br />
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th> Recently Found:</th>
+                <th> @Html.DisplayNameFor(model => model.LivabilityIndex)</th>
+                <th> @Html.DisplayNameFor(model => model.CrimesCount)</th>
+                <th> @Html.DisplayNameFor(model => model.LibrariesCount)</th>
+                <th> @Html.DisplayNameFor(model => model.SchoolsCount)</th>
+                <th> @Html.DisplayNameFor(model => model.ParkFeaturesCount)</th>
+                <th> @Html.DisplayNameFor(model => model.AirQuality)</th>
+            </tr>
+        </thead>
+        <tbody id="recentStats"></tbody>
+    </table>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th> Benchmark Addresses:</th>
+            <th> @Html.DisplayNameFor(model => model.LivabilityIndex)</th>
+            <th> @Html.DisplayNameFor(model => model.CrimesCount)</th>
+            <th> @Html.DisplayNameFor(model => model.LibrariesCount)</th>
+            <th> @Html.DisplayNameFor(model => model.SchoolsCount)</th>
+            <th> @Html.DisplayNameFor(model => model.ParkFeaturesCount)</th>
+            <th> @Html.DisplayNameFor(model => model.AirQuality)</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (Stat stat in Model)
+        {
+            <tr>
+                <td>@stat.Address</td>
+                <td>@stat.LivabilityIndex</td>
+                <td>@stat.CrimesCount</td>
+                <td>@stat.LibrariesCount</td>
+                <td>@stat.SchoolsCount</td>
+                <td>@stat.ParkFeaturesCount</td>
+                <td>@stat.AirQuality</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div id="dataModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title" id="modalTitle"></h4>
+            </div>
+            <div class="modal-body" id="modalBody">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+    {
+    <script>
+        var searchResult;
+
+        function GetStats() {
+            $('#searchButton').prop('disabled', true);
+            $.ajax({
+                type: "GET",
+                url: '/Home/Search',
+                data: { 'address': $('#address').val() },
+                dataType: "json",
+                success: function (result) {
+                    $('#results').show();
+                    searchResult = result;
+                    PopulateRecentStats(result.RecentStats);
+                    PopulateResults(result);
+                    $('#searchButton').prop('disabled', false);
+                }
+            });
+        }
+
+        function PopulateResults(result) {
+            $('#school').html(result.SchoolsCount);
+            $('#library').html(result.LibrariesCount);
+            $('#crime').html(result.CrimesCount);
+            $('#parkFeatures').html(result.ParkFeaturesCount);
+            $('#airQuality').html(result.AirQuality);
+            $('#score').html('Index: ' + result.LivabilityIndex);
+        }
+
+        function ShowLibraries() {
+            $('#modalBody').html(JSON.stringify(searchResult.Libraries));
+            $('#modalTitle').html('Libraries');
+            $('#dataModal').modal('show');
+        }
+        function ShowSchools() {
+            $('#modalBody').html(JSON.stringify(searchResult.Schools));
+            $('#modalTitle').html('Schools');
+            $('#dataModal').modal('show');
+        }
+        function ShowCrimes() {
+            $('#modalBody').html(JSON.stringify(searchResult.Crimes));
+            $('#modalTitle').html('Crimes');
+            $('#dataModal').modal('show');
+        }
+        function ShowAirQuality() {
+            $('#modalBody').html(JSON.stringify(searchResult.AirQualities));
+            $('#modalTitle').html('Air Quality Data');
+            $('#dataModal').modal('show');
+        }
+        function ShowParkFeatures() {
+            $('#modalBody').html(JSON.stringify(searchResult.ParkFeatures));
+            $('#modalTitle').html('Park Features');
+            $('#dataModal').modal('show');
+        }
+
+        function PopulateRecentStats(stats) {
+            $('#recentStats').html('');
+            for (var i = 0; i < stats.length; i++) {
+                var stat = stats[i];
+
+                $('#recentStats').append("<tr>" +
+                    "<td>" + stat.address + "</td>" +
+                    "<td>" + stat.livabilityIndex + "</td>" +
+                    "<td>" + stat.crimesCount + "</td>" +
+                    "<td>" + stat.librariesCount + "</td>" +
+                    "<td>" + stat.schoolsCount + "</td>" +
+                    "<td>" + stat.parkFeaturesCount + "</td>" +
+                    "<td>" + stat.airQuality + "</td>" +
+                    "</tr>");
+            }
+        }
+    </script>
+}
+
